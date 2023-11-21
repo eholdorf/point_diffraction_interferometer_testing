@@ -6,6 +6,8 @@ import astropy.io.fits as pyfits
 import control_matrix as cm
 from general_formulas import *
 import tqdm
+from multiprocessing import Pool
+import multiprocessing
 
 path = '/home/ehold13/PDI_SIMULATIONS/'
 # Load the data
@@ -20,7 +22,7 @@ OL_KL = pyfits.getdata(path+'turbMod_down_07arcsec_50x5000.fits')
 # for each time iteration, run the phase retrieval
 # define the parameters
 pinhole_size = 0.685 #0.5
-pup_width = 2**6
+pup_width = 2**8
 # want the same sampling of the pinhole for all cases
 fp_oversamp = int(2**3/pinhole_size)
 frac =  0.5 #0.2
@@ -50,10 +52,9 @@ if False:
 
 # generate the interferogram for each time step
 intensity_no_aberrations = prop.propagate(np.zeros(np.shape(OL_KL)[0]),frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
-fig,ax1 = plt.subplots()
-ax2 = ax1.twinx()
-for t in tqdm.tqdm(range(np.shape(OL_KL)[1])):
-    cnms = OL_KL[:,t]/589
+
+def rms_calcs(error):
+    cnms = error/589
     # calculate the magnitude of the aberrations
     mag = np.sqrt(np.nansum(cnms**2))*589
     # run the forward model
@@ -67,17 +68,22 @@ for t in tqdm.tqdm(range(np.shape(OL_KL)[1])):
     
     rms = calc_rms(phase,cnms)*589
 
-    if t==0:
-        ax1.scatter([t],[rms],c='k',s=1,label='RMS')
-        ax2.scatter([t],[mag],c='r',s=1,label='Magnitude')
-    else:
-        ax1.scatter([t],[rms],c='k',s=1)
-        ax2.scatter([t],[mag],c='r',s=1)
+    return rms,mag
 
+with Pool(multiprocessing.cpu_count()//2) as p:
+    vals = p.map(rms_calcs,OL_KL.T)
+rms, mag = zip(*vals)
+
+# plot the rms and magnitude
+fig,ax1 = plt.subplots()
+ax2 = ax1.twinx()
+ax1.scatter(np.arange(len(rms)),rms,c='k',s=1)
+ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
 ax1.set_xlabel('Time Iteration')
 ax1.set_ylabel('RMS (nm)')
 ax2.set_ylabel('Magnitude of Aberrations (nm)')
-ax1.legend()
-ax2.legend()
+plt.title('Pinhole Size = {}'.format(pinhole_size))
+plt.savefig('rms_mag_{}.png'.format(pinhole_size))
 plt.show()
+
 

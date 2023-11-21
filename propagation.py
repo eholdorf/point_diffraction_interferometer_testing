@@ -66,13 +66,23 @@ if __name__=="__main__":
     max_zerns = 16
     zern_current = np.arange(0,max_zerns,dtype=np.int32)
     amp = np.zeros(max_zerns,dtype=np.float64)
-    pinhole_size = 0.5
+    pinhole_size = 0.695
     wavelength = 0.589
-    frac=0.5*pinhole_size**2
+    frac=0.5
     # run the forward model
-    intensity_no_abberations = propagate(amp,frac,pinhole_size,pup_width=2**7,fp_oversamp=2**4,mode_type='KL')
+    intensity_no_abberations = propagate(amp,frac,pinhole_size,pup_width=2**9,fp_oversamp=2**5,mode_type='Zernike')
+
+    test_two = propagate(amp,frac,pinhole_size,pup_width=2**9,fp_oversamp=2**6,mode_type='Zernike')
 
     plt.figure()
-    plt.imshow(intensity_no_abberations,cmap='gray')
+    plt.imshow(test_two)
     plt.colorbar()
+    plt.figure()
+    plt.imshow(intensity_no_abberations)
+    plt.colorbar()
+
+    plt.figure()
+    plt.imshow(test_two - intensity_no_abberations)
+    plt.colorbar()
+
     plt.show()
