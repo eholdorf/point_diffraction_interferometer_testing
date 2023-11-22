@@ -211,7 +211,7 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
     # set phase amplitudes to test
     amps = np.linspace(-0.1, 0.1, 10)
     # generate the interferogram with no aberrations
-    cnms = np.zeros(16,dtype=np.float32)
+    cnms = np.zeros(16,dtype=np.float64)
     intensity_flat = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
     #iterate over modes and plot in subplot grid
     fig,axs = plt.subplots(4,4,figsize=(6,6))
@@ -264,7 +264,7 @@ if __name__=="__main__":
         RMSE_all_modes(2**7,2**4*int(1/p),p)
     
     if True:
-        p = np.linspace(0.5,1,6,endpoint=True)
+        p = np.linspace(0.1,0.5,6,endpoint=True)
         if True:
             imgs = []
             # use a progress bar with estimated time to completion

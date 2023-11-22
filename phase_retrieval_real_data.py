@@ -22,7 +22,7 @@ OL_KL = pyfits.getdata(path+'turbMod_down_07arcsec_50x5000.fits')
 # for each time iteration, run the phase retrieval
 # define the parameters
 pinhole_size = 0.685 #0.5
-pup_width = 2**8
+pup_width = 2**9
 # want the same sampling of the pinhole for all cases
 fp_oversamp = int(2**3/pinhole_size)
 frac =  0.5 #0.2
@@ -83,6 +83,10 @@ ax1.set_xlabel('Time Iteration')
 ax1.set_ylabel('RMS (nm)')
 ax2.set_ylabel('Magnitude of Aberrations (nm)')
 plt.title('Pinhole Size = {}'.format(pinhole_size))
+# ask matplotlib for the plotted objects and their labels
+ax2.plot([],[],'.k',label='RMS')
+ax2.plot([],[],'.r',label='Turbulence Magnitude')
+ax2.legend()
 plt.savefig('rms_mag_{}.png'.format(pinhole_size))
 plt.show()
 
