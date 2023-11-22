@@ -2,13 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import propagation as prop
 import general_formulas as gf
+import scipy.interpolate as interp
 
 # Define the parameters
 wavelength = 0.589
-num_pixels = 2**7
+num_pixels = 2**6
 oversamp = 2**3
 
-p = np.linspace(0.1,2,20,endpoint=True)
+p = np.linspace(0.3,0.8,10,endpoint=True)
 p_ext = np.linspace(0.0,max(p),len(p)+1,endpoint=True)
 throughput = np.zeros(len(p)+1)
 z_max = 16

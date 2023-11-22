@@ -5,6 +5,7 @@ import general_formulas as gf
 import propagation as prop
 import scipy.optimize
 from multiprocessing import Pool
+import multiprocessing
 
 # define the parameters
 wavelength = 0.589
@@ -38,7 +39,7 @@ def rms_calculation(amp):
 
     return gf.calc_rms(phase,cnms) * 589
 
-with Pool(10) as mp:
+with Pool(multiprocessing.cpu_count()//2) as mp:
     rms = mp.map(rms_calculation, amps)
 
 plt.scatter(amps, rms)
