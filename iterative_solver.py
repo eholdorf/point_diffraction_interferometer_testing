@@ -40,6 +40,5 @@ def rms_calculation(amp):
 with Pool(10) as mp:
     rms = mp.map(rms_calculation, amps)
 
-scatter_colors = plt.cm.get_cmap('tab' + str(max_zerns), max_zerns)
 plt.scatter(amps, rms)
 plt.show()
