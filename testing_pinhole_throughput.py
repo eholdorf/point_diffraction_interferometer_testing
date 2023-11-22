@@ -17,7 +17,7 @@ cnms = np.zeros(z_max)
 no_pinhole = prop.propagate(cnms,1,0,max_zerns = z_max, wavelength=wavelength,pup_width=num_pixels,fp_oversamp=oversamp, mode_type = 'Zernike')
 summed = no_pinhole.sum()
 for i,size in enumerate(p):
-    l = prop.propagate(cnms,0,size,max_zerns = z_max, wavelength=wavelength,pup_width=num_pixels,fp_oversamp=oversamp*int(max(p)/size), mode_type = 'Zernike')
+    l = prop.propagate(cnms,0,size,max_zerns = z_max, wavelength=wavelength,pup_width=num_pixels,fp_oversamp=int(oversamp*max(p)/size), mode_type = 'Zernike')
     throughput[i+1] = l.sum()/summed
 
 # calculate a linear fit to the data
@@ -27,17 +27,17 @@ exp_line,vals_3 = gf.calc_fit(p_ext,throughput,gf.exponential_line)
 
 plt.figure()
 plt.plot(p_ext,throughput,color='black', linestyle='-', label='Data')
-plt.plot(p_ext,lin_line,color='red', linestyle='--', label='Linear Fit')
-plt.plot(p_ext,quad_line,color='green', linestyle='--', label='Quadratic Fit')
-plt.plot(p_ext,exp_line,color='blue', linestyle='--', label='Exponential Fit')
-plt.plot([min(p_ext),max(p_ext)],[0.5,0.5],color='orange',linestyle=':')
+#plt.plot(p_ext,lin_line,color='red', linestyle='--', label='Linear Fit')
+#plt.plot(p_ext,quad_line,color='green', linestyle='--', label='Quadratic Fit')
+#plt.plot(p_ext,exp_line,color='blue', linestyle='--', label='Exponential Fit')
+#plt.plot([min(p_ext),max(p_ext)],[0.5,0.5],color='orange',linestyle=':')
 plt.title('Throughput vs Pinhole Size')
-plt.text(0.1,0.8,'Fitting function: y = {:.3f}x + {:.3f}'.format(vals_1[0],vals_1[1]),transform=plt.gca().transAxes,fontsize=12,
-         color='red')
-plt.text(0.1,0.7,'Fitting function: y = {:.3f}$x^2$ + {:.3f}x + {:.3f}'.format(vals_2[0],vals_2[1],vals_2[2]),transform=plt.gca().transAxes,fontsize=12,
-         color='green')
-plt.text(0.1,0.6,'Fitting function: y = {:.3f}e$^{{{:.3f}x}}$'.format(vals_3[0],vals_3[1]),transform=plt.gca().transAxes,fontsize=12,
-            color='blue')
+#plt.text(0.1,0.8,'Fitting function: y = {:.3f}x + {:.3f}'.format(vals_1[0],vals_1[1]),transform=plt.gca().transAxes,fontsize=12,
+#         color='red')
+#plt.text(0.1,0.7,'Fitting function: y = {:.3f}$x^2$ + {:.3f}x + {:.3f}'.format(vals_2[0],vals_2[1],vals_2[2]),transform=plt.gca().transAxes,fontsize=12,
+#         color='green')
+#plt.text(0.1,0.6,'Fitting function: y = {:.3f}e$^{{{:.3f}x}}$'.format(vals_3[0],vals_3[1]),transform=plt.gca().transAxes,fontsize=12,
+#            color='blue')
 plt.xlabel('Pinhole size ($\lambda/D$)')
 plt.ylabel('Throughput')
 plt.legend()

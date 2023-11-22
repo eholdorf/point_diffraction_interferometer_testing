@@ -71,7 +71,7 @@ def rms_calcs(error):
     return rms,mag
 
 with Pool(multiprocessing.cpu_count()//2) as p:
-    vals = p.map(rms_calcs,OL_KL.T)
+    vals = p.map(rms_calcs,OL_KL.T[0:20])
 rms, mag = zip(*vals)
 
 # plot the rms and magnitude

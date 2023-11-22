@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 import matplotlib.pyplot as plt
 import general_formulas as gf
@@ -19,7 +20,7 @@ def f(x):
     interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
     return interferogram
 
-amps = np.linspace(-0.5, 0.5, 100)
+amps = np.linspace(-2, 2, 100)
 rms = []
 
 def rms_calculation(amp):
@@ -41,4 +42,5 @@ with Pool(10) as mp:
     rms = mp.map(rms_calculation, amps)
 
 plt.scatter(amps, rms)
+plt.savefig('rms_iterative_solver.png')
 plt.show()
