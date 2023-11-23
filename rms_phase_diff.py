@@ -82,7 +82,7 @@ def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
 
             # Calculate RMSE
             difference = retrieved - true
-            rmse = calc_rms(C, cnms)
+            rmse = calc_rms(C, cnms)*589
             rms.append(rmse)
 
         # Plot RMSE for the current Zernike mode
@@ -91,13 +91,13 @@ def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
     # Show legend and adjust plot
     plt.legend()
     ax = plt.gca()
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
-    ax.set_yticklabels([f'{Fraction(t * 10).limit_denominator()}$\lambda$/10' for t in ax.get_yticks()])
+    #ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    #ax.set_yticklabels([f'{Fraction(t * 10).limit_denominator()}$\lambda$/10' for t in ax.get_yticks()])
     if modes == 'Zernike':
         ax.set_xlabel("Zernike Amplitude")
     elif modes == 'KL':
         ax.set_xlabel("KL Amplitude")
-    ax.set_ylabel("RMS Error")
+    ax.set_ylabel("RMS Error (nm)")
     plt.show()
 
     return pup_width,fp_oversamp,pinhole_size,rms
@@ -259,11 +259,11 @@ if __name__=="__main__":
         plt.show()
 
 
-    if False:
-        p = 0.685
-        RMSE_all_modes(2**7,2**4*int(1/p),p)
-    
     if True:
+        p = 0.685
+        RMSE_all_modes(2**6,2**3*int(1/p),p)
+    
+    if False:
         p = np.linspace(0.1,0.5,6,endpoint=True)
         if True:
             imgs = []
