@@ -24,9 +24,11 @@ def propagate(amp,frac,pinhole_size,max_zerns = 16, wavelength=0.589,pup_width=2
     padded_pupil = np.zeros((pup_width*fp_oversamp,pup_width*fp_oversamp),dtype=complex)
     if mode_type == 'Zernike':
         zerns = aotools.zernikeArray(max_zerns,pup_width,norm="rms")
+  
     elif mode_type == 'KL':
         zerns = aotools.zernikeArray(max_zerns,pup_width,norm='rms')
-        zerns[1:] = aotools.make_kl(max_zerns-1,pup_width,ri=1e-4)[0]
+        zerns[1:] = aotools.karhunenLoeve.make_kl(max_zerns-1,pup_width,ri=1e-7)[0]
+
     else:
         raise ValueError("mode_type must be either 'Zernike' or 'KL'")
 
@@ -70,19 +72,10 @@ if __name__=="__main__":
     wavelength = 0.589
     frac=0.5
     # run the forward model
-    intensity_no_abberations = propagate(amp,frac,pinhole_size,pup_width=2**9,fp_oversamp=2**5,mode_type='Zernike')
+    intensity_no_abberations = propagate(amp,frac,pinhole_size,pup_width=2**6,fp_oversamp=2**3,mode_type='Zernike')
 
-    test_two = propagate(amp,frac,pinhole_size,pup_width=2**9,fp_oversamp=2**6,mode_type='Zernike')
-
-    plt.figure()
-    plt.imshow(test_two)
-    plt.colorbar()
     plt.figure()
     plt.imshow(intensity_no_abberations)
-    plt.colorbar()
-
-    plt.figure()
-    plt.imshow(test_two - intensity_no_abberations)
     plt.colorbar()
 
     plt.show()

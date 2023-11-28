@@ -8,24 +8,21 @@ from multiprocessing import Pool
 import multiprocessing
 import tqdm
 
-# define the parameters
-wavelength = 0.589
-pup_width = 2**6
-pinhole_size = 0.685
-fp_oversamp = int(2**3/pinhole_size)
-frac = 0.5
-max_zerns = 30
-mode_type = 'Zernike'
-
 def f(x):
     amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type = x
     interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
     return interferogram
 
-rms = []
-amps = np.linspace(-2, 2, 100)
+
 def rms_calculation(z):
-    amps = np.linspace(-2, 2, 100)
+    wavelength = 0.589
+    pup_width = 2**9
+    pinhole_size = 0.685
+    fp_oversamp = int(2**7/pinhole_size)
+    frac = 0.5
+    max_zerns = 20
+    mode_type = 'Zernike'
+    amps = np.linspace(-2, 2, 11)
     rmss = []
     for amp in tqdm.tqdm(amps):
         cnms = np.zeros(max_zerns)
@@ -39,17 +36,84 @@ def rms_calculation(z):
             return np.nansum((measured_intensity - interferogram)**2)
         
         phase = scipy.optimize.minimize(g, np.zeros(max_zerns)).x
+        
         rmss.append(gf.calc_rms(phase,cnms) * 589)
 
     return rmss
 
-with Pool(multiprocessing.cpu_count()//2) as mp:
-    # calculate the rms with tqdm to show progress
-    rms = mp.map(rms_calculation, list(range(max_zerns)))
+def iterative_solver(measured_intensity,frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type):
 
-cmap = plt.get_cmap("gist_rainbow")
-plt.figure()
-for i in range(max_zerns):
-    plt.scatter(amps, rms[i], label='Zernike {}'.format(i), s=10, marker='.', color=cmap(float(i)/max_zerns))
-plt.savefig('rms_iterative_solver.png')
-plt.show()
+    def g(amp):
+        interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
+        return np.nansum((measured_intensity - interferogram)**2)
+    
+    phase = scipy.optimize.minimize(g, np.zeros(max_zerns)).x
+    return phase
+
+if __name__ == '__main__':
+    rms = []
+    amps = np.linspace(-2, 2, 11)
+    wavelength = 0.589
+    pup_width = 2**8
+    pinhole_size = 0.685
+    fp_oversamp = int(2**3/pinhole_size)
+    frac = 0.5
+    max_zerns = 20
+    mode_type = 'Zernike'
+    # generate the rms curves for varing Zernike amplitudes
+    if True:
+        with Pool(multiprocessing.cpu_count()//2) as mp:
+            # calculate the rms with tqdm to show progress
+            rms = mp.map(rms_calculation, list(range(max_zerns)))
+
+        cmap = plt.get_cmap("turbo")
+        plt.figure(figsize=(10,10))
+        for i in range(max_zerns):
+            plt.scatter(amps, rms[i], label='Zernike {}'.format(i), s=10, marker='o', color=cmap(float(i)/max_zerns))
+        plt.legend()
+        plt.xlabel('Zernike Amplitude')
+        plt.ylabel('RMS (nm)')
+        plt.savefig('rms_iterative_solver_labelled.png')
+        plt.show()
+
+    # look at how the number of points in the fit affects the rms
+    if False:
+        # define the parameters
+        wavelength = 0.589
+        pinhole_size = 0.685
+        pup_width = 2**9
+        fp_oversamp = int(2**3/pinhole_size)
+        frac = 0.5
+        max_zerns = 20
+        mode_type = 'Zernike'
+        print('Changing number of points...')
+        plt.figure(figsize=(10,10))
+        for pup in [2**i for i in range(3,12)]:
+            cnms = np.zeros(max_zerns)
+            cnms[10] = 0.3
+            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup,fp_oversamp,mode_type)
+            phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup,fp_oversamp,mode_type)
+            rms = gf.calc_rms(phase,cnms)*589
+            print(pup,np.round(rms,2))
+            plt.plot([pup],[rms], label='RMS', marker='o', color='black')
+        plt.title('RMS vs Pupil Size')
+        plt.xlabel('Pupil Size (pixels)')
+        plt.ylabel('RMS (nm)')
+        plt.savefig('rms_vs_pupil_size.png')
+        print('Changing oversampling rate...')
+        plt.figure(figsize=(10,10))
+        for pup in [2**i for i in range(4,8)]:
+            cnms = np.zeros(max_zerns)
+            cnms[10] = 0.3
+            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            rms = gf.calc_rms(phase,cnms)*589
+            print(pup,np.round(rms,2))
+            plt.plot([pup],[rms], label='RMS', marker='o', color='black')
+        plt.title('RMS vs Oversampling')
+        plt.xlabel('Oversampling')
+        plt.ylabel('RMS (nm)')
+        plt.savefig('rms_vs_oversampling_size.png')
+        plt.show()
+
+    

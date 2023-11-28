@@ -8,11 +8,12 @@ from general_formulas import *
 import tqdm
 from multiprocessing import Pool
 import multiprocessing
+import iterative_solver as it
 
 path = '/home/ehold13/PDI_SIMULATIONS/'
 # Load the data
 # open look KL modes
-OL_KL = pyfits.getdata(path+'turbMod_down_07arcsec_50x5000.fits')
+OL_KL = pyfits.getdata(path+'turbulence_data/turbMod_down_07arcsec_50x5000.fits')
 # plot the data
 # plt.figure()
 # plt.imshow(OL_KL/589, cmap='inferno',aspect='auto')
@@ -27,6 +28,44 @@ pup_width = 2**9
 fp_oversamp = int(2**3/pinhole_size)
 frac =  0.5 #0.2
 method = 'KL'
+
+if True:
+
+    def rms_calcs(error):
+        cnms = error/589
+        # calculate the magnitude of the aberrations
+        mag = np.sqrt(np.nansum(cnms**2))*589
+        # run the forward model
+        intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
+
+        # now find the phase
+        phase = it.iterative_solver(intensity,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
+
+        print(phase,cnms)
+        rms = calc_rms(phase,cnms)*589
+
+        return rms,mag
+
+    with Pool(multiprocessing.cpu_count()//2) as p:
+        vals = p.map(rms_calcs,OL_KL.T)
+    rms, mag = zip(*vals)
+    print(len(rms),len(mag))
+
+    # plot the rms and magnitude
+    fig,ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.scatter(np.arange(len(rms)),rms,c='k',s=1)
+    ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
+    ax1.set_xlabel('Time Iteration')
+    ax1.set_ylabel('RMS (nm)')
+    ax2.set_ylabel('Magnitude of Aberrations (nm)')
+    plt.title('Pinhole Size = {}'.format(pinhole_size))
+    # ask matplotlib for the plotted objects and their labels
+    ax2.plot([],[],'.k',label='RMS')
+    ax2.plot([],[],'.r',label='Turbulence Magnitude')
+    ax2.legend()
+    plt.savefig('figures/rms_mag_{}.png'.format(pinhole_size))
+    plt.close()
 
 # generate the control matrix
 IM_inv = cm.generate_matrix(max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,pinhole_size=pinhole_size,wavelength=0.589,ratio=frac,amp=1e-4,mode=method)

@@ -10,6 +10,7 @@ from progress.bar import Bar
 from multiprocessing import Pool
 from general_formulas import *
 import matplotlib.animation as animation
+import iterative_solver as im
 
 def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
     """
@@ -209,7 +210,7 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
     
     frac = 0.5# pinhole_size**2
     # set phase amplitudes to test
-    amps = np.linspace(-0.1, 0.1, 10)
+    amps = np.linspace(-2,2,100)
     # generate the interferogram with no aberrations
     cnms = np.zeros(16,dtype=np.float64)
     intensity_flat = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
@@ -242,7 +243,61 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
         plt.savefig('response_curve_changing_p/response_curve_{}.png'.format(pinhole_size),dpi=300)
         plt.close()
 
+def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
+    """
+    Calculate and plot the response curve for a given configuration.
 
+    Parameters:
+    - pup_width (float): Width of the pupil.
+    - fp_oversamp (int): Oversampling factor for the focal plane.
+
+    Returns:
+    None
+
+    This function generates a matrix, iterates over different Zernike modes, calculates
+    the RMSE for each mode, and plots the results.
+
+    Note: This code assumes the existence of the following external functions and modules:
+    - cm.generate_matrix(pup_width, fp_oversamp)
+    - prop.propagate(cnms, frac, pinhole_size, max_zerns, pup_width, fp_oversamp, wavelength, mode_type)
+    - aotools.zernikeArray(max_zerns, pup_width, norm)
+    - aotools.make_kl(max_zerns, pup_width, ri)
+    - aotools.circle(radius, size)
+
+    """
+    
+    frac = 0.5
+    # set phase amplitudes to test
+    amps = np.linspace(-2,2,100)
+    # generate the interferogram with no aberrations
+    cnms = np.zeros(16,dtype=np.float64)
+    intensity_flat = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
+    #iterate over modes and plot in subplot grid
+    fig,axs = plt.subplots(4,4,figsize=(6,6))
+    # generate a line for each of the axes
+    for modes in range(16):
+        Cs = np.zeros(len(amps),dtype=np.float32)
+        cnmss = np.zeros(len(amps),dtype=np.float32)
+        for j,amp in enumerate(amps):
+            cnms = np.zeros(16,dtype=np.float32)
+            cnms[modes] = amp
+            intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
+            # use the iterative method to retrieve the wavefront
+            C = im.iterative_retrieval(intensity,intensity_flat,pup_width,fp_oversamp,pinhole_size,frac)
+
+            Cs[j] = C[modes]
+            cnmss[j] = cnms[modes]
+            # plot the result
+            
+        axs.flatten()[modes].plot(cnmss, Cs, 'ko')
+    if show:
+        plt.show()
+    else:
+        # save the figure
+        plt.tight_layout()
+        plt.title('Response Curve for Pinhole Size = {}, using Iterative Method'.format(pinhole_size))
+        plt.savefig('response_curve_changing_p/response_curve_iterative_{}.png'.format(pinhole_size),dpi=300)
+        plt.close()
 # test the functions for a range of pup_width and fp_oversamp
 if __name__=="__main__":
 
@@ -259,9 +314,14 @@ if __name__=="__main__":
         plt.show()
 
 
-    if True:
+    if False:
         p = 0.685
         RMSE_all_modes(2**6,2**3*int(1/p),p)
+
+    if True:
+        p = 0.685
+        #response_curve(2**9, int(2**3/p),p,show = True)
+        response_curve_iterative(2**9, int(2**3/p),p,show = True)
     
     if False:
         p = np.linspace(0.1,0.5,6,endpoint=True)
