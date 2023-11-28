@@ -283,7 +283,7 @@ def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
             cnms[modes] = amp
             intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
             # use the iterative method to retrieve the wavefront
-            C = im.iterative_retrieval(intensity,intensity_flat,pup_width,fp_oversamp,pinhole_size,frac)
+            C = im.iterative_solver(intensity,intensity_flat,pup_width,fp_oversamp,pinhole_size,frac)
 
             Cs[j] = C[modes]
             cnmss[j] = cnms[modes]
