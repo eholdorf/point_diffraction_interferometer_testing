@@ -11,6 +11,7 @@ from multiprocessing import Pool
 from general_formulas import *
 import matplotlib.animation as animation
 import iterative_solver as im
+import tqdm
 
 def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
     """
@@ -217,7 +218,7 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
     #iterate over modes and plot in subplot grid
     fig,axs = plt.subplots(4,4,figsize=(6,6))
     # generate a line for each of the axes
-    for modes in range(16):
+    for modes in tqdm.tqdm(range(16)):
         Cs = np.zeros(len(amps),dtype=np.float32)
         cnmss = np.zeros(len(amps),dtype=np.float32)
         for j,amp in enumerate(amps):
@@ -275,7 +276,7 @@ def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
     #iterate over modes and plot in subplot grid
     fig,axs = plt.subplots(4,4,figsize=(6,6))
     # generate a line for each of the axes
-    for modes in range(16):
+    for modes in tqdm.tqdm(range(16)):
         Cs = np.zeros(len(amps),dtype=np.float32)
         cnmss = np.zeros(len(amps),dtype=np.float32)
         for j,amp in enumerate(amps):

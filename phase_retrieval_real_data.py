@@ -23,9 +23,9 @@ OL_KL = pyfits.getdata(path+'turbulence_data/turbMod_down_07arcsec_50x5000.fits'
 # for each time iteration, run the phase retrieval
 # define the parameters
 pinhole_size = 0.685 #0.5
-pup_width = 2**6
+pup_width = 2**9
 # want the same sampling of the pinhole for all cases
-fp_oversamp = int(2**2/pinhole_size)
+fp_oversamp = int(2**3/pinhole_size)
 frac =  0.5 #0.2
 method = 'KL'
 
@@ -41,13 +41,13 @@ if True:
         # now find the phase
         phase = it.iterative_solver(intensity,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
 
-        print(phase,cnms)
         rms = calc_rms(phase,cnms)*589
 
         return rms,mag
 
-    with Pool(5) as p:
-        vals = p.map(rms_calcs,OL_KL.T[0:5])
+    
+    with Pool(10) as p:
+        vals = p.map(rms_calcs,OL_KL.T)
     rms, mag = zip(*vals)
     print(len(rms),len(mag))
 
@@ -64,7 +64,7 @@ if True:
     ax2.plot([],[],'.k',label='RMS')
     ax2.plot([],[],'.r',label='Turbulence Magnitude')
     ax2.legend()
-    plt.savefig('figures/rms_mag_{}.png'.format(pinhole_size))
+    plt.savefig('figures/rms_mag_{}_iterative.png'.format(pinhole_size))
     plt.close()
 
 # generate the control matrix
@@ -109,7 +109,7 @@ def rms_calcs(error):
 
     return rms,mag
 
-with Pool(multiprocessing.cpu_count()//4) as p:
+with Pool(10) as p:
     vals = p.map(rms_calcs,OL_KL.T)
 rms, mag = zip(*vals)
 
@@ -126,7 +126,7 @@ plt.title('Pinhole Size = {}'.format(pinhole_size))
 ax2.plot([],[],'.k',label='RMS')
 ax2.plot([],[],'.r',label='Turbulence Magnitude')
 ax2.legend()
-plt.savefig('rms_mag_{}.png'.format(pinhole_size))
+plt.savefig('figures/rms_mag_{}.png'.format(pinhole_size))
 plt.show()
 
 
