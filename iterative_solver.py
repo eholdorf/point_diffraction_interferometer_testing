@@ -86,6 +86,19 @@ if __name__ == '__main__':
         frac = 0.5
         max_zerns = 20
         mode_type = 'Zernike'
+        print('Changing oversampling rate...')
+        plt.figure(figsize=(10,10))
+        for pup in tqdm.tqdm([2**i for i in range(1,10)]):
+            cnms = np.zeros(max_zerns)
+            cnms[10] = 0.3
+            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            rms = gf.calc_rms(phase,cnms)*589
+            plt.plot([pup],[rms], label='RMS', marker='o', color='black')
+        plt.title('RMS vs Oversampling')
+        plt.xlabel('Oversampling')
+        plt.ylabel('RMS (nm)')
+        plt.savefig('figures/oversampling_error_iterative_method.png')
         print('Changing number of points...')
         plt.figure(figsize=(10,10))
         for pup in tqdm.tqdm([2**i for i in range(3,12)]):
@@ -99,19 +112,6 @@ if __name__ == '__main__':
         plt.xlabel('Pupil Size (pixels)')
         plt.ylabel('RMS (nm)')
         plt.savefig('figures/pupil_width_error_iterative_method.png')
-        print('Changing oversampling rate...')
-        plt.figure(figsize=(10,10))
-        for pup in tqdm.tqdm([2**i for i in range(4,8)]):
-            cnms = np.zeros(max_zerns)
-            cnms[10] = 0.3
-            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
-            phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
-            rms = gf.calc_rms(phase,cnms)*589
-            plt.plot([pup],[rms], label='RMS', marker='o', color='black')
-        plt.title('RMS vs Oversampling')
-        plt.xlabel('Oversampling')
-        plt.ylabel('RMS (nm)')
-        plt.savefig('figures/oversampling_error_iterative_method.png')
         plt.show()
 
     

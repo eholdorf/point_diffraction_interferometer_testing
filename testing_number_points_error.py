@@ -8,7 +8,7 @@ import tqdm
 # Define the parameters
 wavelength = 0.589
 num_pixels = 2**6# [2**i for i in range(4,10)]
-oversamp = [int(2**i/0.685) for i in range(1,8)]
+oversamp = [int(2**i/0.685) for i in range(1,10)]
 p = 0.685
 frac = 0.5
 
