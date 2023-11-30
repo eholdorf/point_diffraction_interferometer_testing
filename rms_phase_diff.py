@@ -335,8 +335,8 @@ if __name__=="__main__":
 
     if True:
         p = 0.685
-        for pup_width in [2**i for i in range(3,8)]:
-            for oversamp in [2**i for i in range(6,9)]: 
+        for pup_width in [2**i for i in range(3,12)]:
+            for oversamp in [2**i for i in range(1,9)]: 
                 response_curve(pup_width,int(oversamp/p),p,show = False)
                 #response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
 
