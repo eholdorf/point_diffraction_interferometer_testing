@@ -12,6 +12,7 @@ from general_formulas import *
 import matplotlib.animation as animation
 import iterative_solver as im
 import tqdm
+import general_formulas as gf
 
 def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
     """
@@ -217,6 +218,8 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
     intensity_flat = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
     #iterate over modes and plot in subplot grid
     fig,axs = plt.subplots(4,4,figsize=(6,6))
+    # generate the control matrix
+    CM = cm.generate_matrix(pup_width=pup_width,fp_oversamp=fp_oversamp,max_zerns=16,pinhole_size=pinhole_size,ratio=frac)
     # generate a line for each of the axes
     for modes in tqdm.tqdm(range(16)):
         Cs = np.zeros(len(amps),dtype=np.float32)
@@ -225,8 +228,6 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
             cnms = np.zeros(16,dtype=np.float32)
             cnms[modes] = amp
             intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
-            # generate the control matrix
-            CM = cm.generate_matrix(pup_width=pup_width,fp_oversamp=fp_oversamp,max_zerns=16,pinhole_size=pinhole_size,ratio=frac)
             # retreived cnms
             C = np.dot(CM,intensity.ravel()-intensity_flat.ravel())
             #C = np.dot(CM,intensity.ravel())
@@ -236,12 +237,19 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
             # plot the result
             
         axs.flatten()[modes].plot(cnmss, Cs, 'ko')
+        # add axis titles
+        axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
+        # set axis titles for the first column and row
+        if modes%4==0:
+            axs.flatten()[modes].set_ylabel('Retrieved')
+        if modes>11:
+            axs.flatten()[modes].set_xlabel('True')
     if show:
         plt.show()
     else:
         # save the figure
         plt.tight_layout()
-        plt.savefig('response_curve_changing_p/response_curve_{}.png'.format(pinhole_size),dpi=300)
+        plt.savefig('linearity_figures/control_matrix_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
         plt.close()
 
 def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
@@ -291,13 +299,19 @@ def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
             # plot the result
             
         axs.flatten()[modes].plot(cnmss, Cs, 'ko')
+        # add axis titles
+        axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
+        # set axis titles for the first column and row
+        if modes%4==0:
+            axs.flatten()[modes].set_ylabel('Retrieved')
+        if modes>11:
+            axs.flatten()[modes].set_xlabel('True')
     if show:
         plt.show()
     else:
         # save the figure
         plt.tight_layout()
-        plt.title('Response Curve for Pinhole Size = {}, using Iterative Method'.format(pinhole_size))
-        plt.savefig('response_curve_changing_p/response_curve_iterative_{}.png'.format(pinhole_size),dpi=300)
+        plt.savefig('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
         plt.close()
 # test the functions for a range of pup_width and fp_oversamp
 if __name__=="__main__":
@@ -321,8 +335,11 @@ if __name__=="__main__":
 
     if True:
         p = 0.685
-        #response_curve(2**6, int(2**3/p),p,show = False)
-        response_curve_iterative(2**6, int(2**3/p),p,show = False)
+        for pup_width in [2**i for i in range(3,8)]:
+            for oversamp in [2**i for i in range(6,9)]: 
+                response_curve(pup_width,int(oversamp/p),p,show = False)
+                #response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
+
     
     if False:
         p = np.linspace(0.1,0.5,6,endpoint=True)

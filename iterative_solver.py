@@ -88,7 +88,7 @@ if __name__ == '__main__':
         mode_type = 'Zernike'
         print('Changing oversampling rate...')
         plt.figure(figsize=(10,10))
-        for pup in tqdm.tqdm([2**i for i in range(1,10)]):
+        for pup in tqdm.tqdm([2**i for i in range(1,8)]):
             cnms = np.zeros(max_zerns)
             cnms[10] = 0.3
             intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)

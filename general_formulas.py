@@ -1,7 +1,13 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import matplotlib
 
+# set the font size and style for all plots
+font = {'family' : 'DejaVu Sans',
+        'weight' : 'normal',
+        'size'   : 6}
+
+matplotlib.rc('font', **font)
 
 def calc_rms(observed_data,true_data):
     """
