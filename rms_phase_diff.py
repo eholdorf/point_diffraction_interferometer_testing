@@ -321,8 +321,8 @@ if __name__=="__main__":
 
     if True:
         p = 0.685
-        #response_curve(2**6, int(2**3/p),p,show = True)
-        response_curve_iterative(2**6, int(2**3/p),p,show = True)
+        response_curve(2**6, int(2**3/p),p,show = True)
+        #response_curve_iterative(2**6, int(2**3/p),p,show = True)
     
     if False:
         p = np.linspace(0.1,0.5,6,endpoint=True)
