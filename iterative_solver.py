@@ -52,7 +52,7 @@ def iterative_solver(measured_intensity,frac, pinhole_size, max_zerns,wavelength
 
 if __name__ == '__main__':
     rms = []
-    amps = np.linspace(-2, 2, 11)
+    amps = np.linspace(-0.1, 0.1, 11)
     wavelength = 0.589
     pup_width = 2**8
     pinhole_size = 0.685

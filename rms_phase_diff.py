@@ -211,7 +211,7 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
     
     frac = 0.5# pinhole_size**2
     # set phase amplitudes to test
-    amps = np.linspace(-2,2,100)
+    amps = np.linspace(-0.1,0.1,11)
     # generate the interferogram with no aberrations
     cnms = np.zeros(16,dtype=np.float64)
     intensity_flat = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
@@ -269,7 +269,7 @@ def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
     
     frac = 0.5
     # set phase amplitudes to test
-    amps = np.linspace(-2,2,100)
+    amps = np.linspace(-0.1,0.1,11)
     # generate the interferogram with no aberrations
     cnms = np.zeros(16,dtype=np.float64)
     intensity_flat = prop.propagate(cnms,frac,pinhole_size,max_zerns=16,pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
