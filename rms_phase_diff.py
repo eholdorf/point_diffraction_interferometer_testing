@@ -13,6 +13,7 @@ import matplotlib.animation as animation
 import iterative_solver as im
 import tqdm
 import general_formulas as gf
+import os
 
 def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
     """
@@ -336,9 +337,12 @@ if __name__=="__main__":
     if True:
         p = 0.685
         for pup_width in [2**i for i in range(3,12)]:
-            for oversamp in [2**i for i in range(1,9)]: 
-                response_curve(pup_width,int(oversamp/p),p,show = False)
-                #response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
+            for oversamp in [2**i for i in range(1,6)]: 
+                # check if file already exists
+                if not os.path.isfile('linearity_figures/control_matrix_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
+                    response_curve(pup_width,int(oversamp/p),p,show = False)
+                if not os.path.isfile('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
+                    response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
 
     
     if False:
