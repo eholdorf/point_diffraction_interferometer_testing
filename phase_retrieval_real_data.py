@@ -54,7 +54,7 @@ if True:
     # plot the rms and magnitude
     fig,ax1 = plt.subplots()
     ax2 = ax1.twinx()
-    ax1.scatter(np.arange(len(rms)),rms,c='k',s=1)
+    ax1.scatter(np.arange(len(rms)),rms,c='k',s=5)
     ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
     ax1.set_xlabel('Time Iteration')
     ax1.set_ylabel('RMS (nm)')
