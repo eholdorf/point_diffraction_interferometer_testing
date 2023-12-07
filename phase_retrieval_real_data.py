@@ -49,7 +49,7 @@ if True:
     with Pool(10) as p:
         vals = p.map(rms_calcs,OL_KL.T)
     rms, mag = zip(*vals)
-    print(len(rms),len(mag))
+    np.save('turbulence_data/rms_mag_{}_iterative'.format(pinhole_size),vals)
 
     # plot the rms and magnitude
     fig,ax1 = plt.subplots()

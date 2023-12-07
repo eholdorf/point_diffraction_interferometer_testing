@@ -7,8 +7,8 @@ import tqdm
 
 # Define the parameters
 wavelength = 0.589
-num_pixels = 2**6# [2**i for i in range(4,10)]
-oversamp = [int(2**i/0.685) for i in range(1,8)]
+num_pixels = 2**4 # [2**i for i in range(4,10)]
+oversamp = [int(2**i/0.685) for i in range(1,10)]
 p = 0.685
 frac = 0.5
 
@@ -37,10 +37,11 @@ for num in tqdm.tqdm(oversamp):
     phase[0] = 0
 
     rms = gf.calc_rms(phase,cnms) * 589
+    print(num,rms)
     plt.plot([num],[rms],'o',color=colours[0])
-plt.xlabel('Focal Plane Oversampling (pixels)')
-plt.ylabel('RMS error (nm)')
-plt.savefig('figures/oversampling_error_control_matrix.png')
+    plt.xlabel('Focal Plane Oversampling (pixels)')
+    plt.ylabel('RMS error (nm)')
+    plt.savefig('figures/oversampling_error_control_matrix.png')
 
     
 # Define the parameters

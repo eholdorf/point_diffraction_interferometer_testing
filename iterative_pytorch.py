@@ -2,14 +2,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import general_formulas as gf
-import propagation as prop
+import forward_model_pytorch as prop
 import scipy.optimize
 from multiprocessing import Pool
+import multiprocessing
 import tqdm
+import torch
 
 def f(x):
-    amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type = x
-    interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
+    cnms,frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type = x
+    interferogram = prop.forward_prop(max_zerns,cnms, pup_width,fp_oversamp,pinhole_size,wavelength)
     return interferogram
 
 
@@ -30,25 +32,34 @@ def rms_calculation(z):
         measured_intensity = f([cnms,frac,pinhole_size,max_zerns,wavelength,pup_width,fp_oversamp,mode_type])
 
         def g(x):
-            amp = x
-            interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
-            return np.nansum((measured_intensity - interferogram)**2)
+            cnms = x
+            interferogram = prop.forward_prop(max_zerns,cnms, pup_width,fp_oversamp,pinhole_size,wavelength)
+            interferogram = torch.from_numpy(interferogram)
+            measured_intensity = torch.from_numpy(measured_intensity)
+            return torch.nansum((measured_intensity - interferogram)**2)
         
-        phase = scipy.optimize.minimize(g, np.zeros(max_zerns),options={'disp':True}).x
+        grad = torch.autograd.functional.jacobian(g, cnms)
+        phase = scipy.optimize.minimize(g, np.zeros(max_zerns),jac=grad,options={'disp':True}).x
         
         rmss.append(gf.calc_rms(phase,cnms) * 589)
 
     return rmss
 
 def iterative_solver(measured_intensity,frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type):
-   
+    measured_intensity/=torch.max(measured_intensity)
     def g(amp):
-        interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
-        
-        return np.nansum((measured_intensity - interferogram)**2)
+        interferogram = prop.forward_prop(max_zerns,amp, pup_width,fp_oversamp,pinhole_size,wavelength)
+        return torch.nansum((measured_intensity - interferogram)**2)
     
-    phase = scipy.optimize.minimize(g, np.zeros(max_zerns),tol=1e-10,options={'disp':True}).x
+    def g_jac(amp):
+        grad = torch.autograd.functional.jacobian(g, amp)
+        return grad
 
+    x0 = torch.zeros(max_zerns).clone().detach().requires_grad_(True)
+    phase = scipy.optimize.minimize(fun=lambda amp:g(amp).item(), x0=x0.detach().numpy(),
+                                    tol = 1e-10,
+                                    jac=lambda amp:g_jac(torch.tensor(amp,requires_grad=True,dtype=torch.float64)).detach().numpy(),
+                                    options={'disp':True}).x
     return phase
 
 if __name__ == '__main__':
@@ -92,8 +103,10 @@ if __name__ == '__main__':
         for pup in tqdm.tqdm([2**i for i in range(1,8)]):
             cnms = np.zeros(max_zerns)
             cnms[10] = 0.3
-            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            cnms = torch.from_numpy(cnms)
+            intensity = prop.forward_prop(max_zerns,cnms, pup_width,int(pup/pinhole_size),pinhole_size,wavelength)
             phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            cnms = cnms.detach().numpy()
             rms = gf.calc_rms(phase,cnms)*589
             print(pup,rms)
             plt.plot([pup],[rms], label='RMS', marker='o', color='black')
@@ -101,22 +114,22 @@ if __name__ == '__main__':
             plt.title('RMS vs Oversampling')
             plt.xlabel('Oversampling')
             plt.ylabel('RMS (nm)')
-            plt.savefig('figures/oversampling_error_iterative_method.png')
+            plt.savefig('figures/oversampling_error_iterative_method_pytorch.png')
         plt.close()
         print('Changing number of points...')
         plt.figure(figsize=(10,10))
         for pup in tqdm.tqdm([2**i for i in range(3,12)]):
             cnms = np.zeros(max_zerns)
             cnms[10] = 0.3
-            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup,fp_oversamp,mode_type)
+            cnms = torch.from_numpy(cnms)
+            intensity = prop.forward_prop(max_zerns,cnms, pup,fp_oversamp ,pinhole_size,wavelength)
             phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup,fp_oversamp,mode_type)
+            cnms = cnms.detach().numpy()
             rms = gf.calc_rms(phase,cnms)*589
             print(pup,rms)
             plt.plot([pup],[rms], label='RMS', marker='o', color='black')
             plt.title('RMS vs Pupil Size')
             plt.xlabel('Pupil Size (pixels)')
             plt.ylabel('RMS (nm)')
-            plt.savefig('figures/pupil_width_error_iterative_method.png')
+            plt.savefig('figures/pupil_width_error_iterative_method_pytorch.png')
         plt.show()
-
-    

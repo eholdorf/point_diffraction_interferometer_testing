@@ -237,14 +237,16 @@ def response_curve(pup_width, fp_oversamp,pinhole_size,show = False):
             cnmss[j] = cnms[modes]
             # plot the result
             
-        axs.flatten()[modes].plot(cnmss, Cs, 'ko')
-        # add axis titles
-        axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
-        # set axis titles for the first column and row
-        if modes%4==0:
-            axs.flatten()[modes].set_ylabel('Retrieved')
-        if modes>11:
-            axs.flatten()[modes].set_xlabel('True')
+            axs.flatten()[modes].plot([cnms[modes]], [C[modes]], 'ko')
+            # add axis titles
+            axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
+            # set axis titles for the first column and row
+            if modes%4==0:
+                axs.flatten()[modes].set_ylabel('Retrieved')
+            if modes>11:
+                axs.flatten()[modes].set_xlabel('True')
+            plt.tight_layout()
+            plt.savefig('linearity_figures/control_matrix_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
     if show:
         plt.show()
     else:
@@ -299,14 +301,17 @@ def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
             cnmss[j] = cnms[modes]
             # plot the result
             
-        axs.flatten()[modes].plot(cnmss, Cs, 'ko')
-        # add axis titles
-        axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
-        # set axis titles for the first column and row
-        if modes%4==0:
-            axs.flatten()[modes].set_ylabel('Retrieved')
-        if modes>11:
-            axs.flatten()[modes].set_xlabel('True')
+            axs.flatten()[modes].plot([cnms[modes]], [C[modes]], 'ko')
+            # add axis titles
+            axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
+            # set axis titles for the first column and row
+            if modes%4==0:
+                axs.flatten()[modes].set_ylabel('Retrieved')
+            if modes>11:
+                axs.flatten()[modes].set_xlabel('True')
+            plt.tight_layout()
+            plt.savefig('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
+            
     if show:
         plt.show()
     else:
@@ -336,13 +341,13 @@ if __name__=="__main__":
 
     if True:
         p = 0.685
-        for pup_width in [2**i for i in range(3,12)]:
-            for oversamp in [2**i for i in range(1,6)]: 
+        for pup_width in [2**i for i in range(9,12)]:
+            for oversamp in [2**i for i in range(1,10)]: 
                 # check if file already exists
                 if not os.path.isfile('linearity_figures/control_matrix_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
                     response_curve(pup_width,int(oversamp/p),p,show = False)
-                if not os.path.isfile('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
-                    response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
+                #if not os.path.isfile('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
+                #    response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
 
     
     if False:

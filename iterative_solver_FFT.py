@@ -2,14 +2,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import general_formulas as gf
-import propagation as prop
+import forward_model as prop
 import scipy.optimize
 from multiprocessing import Pool
+import multiprocessing
 import tqdm
 
 def f(x):
     amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type = x
-    interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
+    interferogram = prop.forward_prop(max_zerns,amp, pup_width,fp_oversamp,pinhole_size,wavelength)
     return interferogram
 
 
@@ -31,7 +32,7 @@ def rms_calculation(z):
 
         def g(x):
             amp = x
-            interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
+            interferogram = prop.forward_prop(max_zerns,amp, pup_width,fp_oversamp,pinhole_size,wavelength)
             return np.nansum((measured_intensity - interferogram)**2)
         
         phase = scipy.optimize.minimize(g, np.zeros(max_zerns),options={'disp':True}).x
@@ -41,14 +42,12 @@ def rms_calculation(z):
     return rmss
 
 def iterative_solver(measured_intensity,frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type):
-   
+
     def g(amp):
-        interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)
-        
+        interferogram = prop.forward_prop(max_zerns,amp, pup_width,fp_oversamp,pinhole_size,wavelength)
         return np.nansum((measured_intensity - interferogram)**2)
     
     phase = scipy.optimize.minimize(g, np.zeros(max_zerns),tol=1e-10,options={'disp':True}).x
-
     return phase
 
 if __name__ == '__main__':
@@ -92,10 +91,9 @@ if __name__ == '__main__':
         for pup in tqdm.tqdm([2**i for i in range(1,8)]):
             cnms = np.zeros(max_zerns)
             cnms[10] = 0.3
-            intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
-            phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
+            measured_intensity = prop.forward_prop(max_zerns,cnms, pup_width,int(pup/pinhole_size),pinhole_size,wavelength)
+            phase  = iterative_solver(measured_intensity, frac, pinhole_size, max_zerns,wavelength,pup_width,int(pup/pinhole_size),mode_type)
             rms = gf.calc_rms(phase,cnms)*589
-            print(pup,rms)
             plt.plot([pup],[rms], label='RMS', marker='o', color='black')
 
             plt.title('RMS vs Oversampling')
@@ -111,12 +109,11 @@ if __name__ == '__main__':
             intensity = prop.propagate(cnms, frac, pinhole_size, max_zerns,wavelength,pup,fp_oversamp,mode_type)
             phase  = iterative_solver(intensity, frac, pinhole_size, max_zerns,wavelength,pup,fp_oversamp,mode_type)
             rms = gf.calc_rms(phase,cnms)*589
-            print(pup,rms)
             plt.plot([pup],[rms], label='RMS', marker='o', color='black')
-            plt.title('RMS vs Pupil Size')
-            plt.xlabel('Pupil Size (pixels)')
-            plt.ylabel('RMS (nm)')
-            plt.savefig('figures/pupil_width_error_iterative_method.png')
+        plt.title('RMS vs Pupil Size')
+        plt.xlabel('Pupil Size (pixels)')
+        plt.ylabel('RMS (nm)')
+        plt.savefig('figures/pupil_width_error_iterative_method.png')
         plt.show()
 
     

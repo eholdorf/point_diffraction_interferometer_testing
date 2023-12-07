@@ -36,21 +36,24 @@ def forward_prop(max_zerns,cnms, pup_width,fp_oversamp,pinhole_size,wavelength):
     fp_amp = np.fft.fft2(psi,s=[pup_width*fp_oversamp]*2)*mod_func
     # sensor-plane intensity is inverse FFT of FP amplitude, cropped and squared
     intensity = np.abs(np.fft.ifft2(fp_amp)[:pup_width,:pup_width])**2
+    
     return intensity
 
 # test the above function
 if __name__ == "__main__":
     # define the parameters
-    max_zerns = 20
+    max_zerns = 16
     cnms = np.zeros(max_zerns,dtype=np.float64) #np.random.randn(max_zerns)
-    cnms[18] = 1
-    pup_width = 2**6
+    pup_width = 2**8
     fp_oversamp = 2**2
-    pinhole_size = 1
+    pinhole_size = 0.685
     wavelength = 0.589
+
     # run the function
     intensity = forward_prop(max_zerns,cnms,pup_width,fp_oversamp,pinhole_size,wavelength)
+    print(np.nansum(intensity))
     # plot the result
     import matplotlib.pyplot as plt
     plt.imshow(intensity)
+    plt.colorbar()
     plt.show()

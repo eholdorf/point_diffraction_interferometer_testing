@@ -59,7 +59,7 @@ def propagate(amp,frac,pinhole_size,max_zerns = 16, wavelength=0.589,pup_width=2
     camera = camera[mid_int - int(pup_width/2):mid_int + int(pup_width/2),
                  mid_int - int(pup_width/2):mid_int + int(pup_width/2)]
 
-    return abs(camera)**2
+    return abs(camera)**2/np.max(abs(camera)**2)
 
 # test the function
 if __name__=="__main__":
@@ -72,10 +72,7 @@ if __name__=="__main__":
     wavelength = 0.589
     frac=0.5
     # run the forward model
-    intensity_no_abberations = propagate(amp,frac,pinhole_size,pup_width=2**6,fp_oversamp=2**3,mode_type='Zernike')
-
-    plt.figure()
-    plt.imshow(intensity_no_abberations)
-    plt.colorbar()
-
+    intensity_no_abberations = propagate(amp,frac,pinhole_size,pup_width=2**7,fp_oversamp=2**4,mode_type='Zernike')
+    
+    plt.hist(intensity_no_abberations.ravel())
     plt.show()
