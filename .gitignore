@@ -102,3 +102,6 @@ zernike_maps/16_zernikes_4.npy
 zernike_maps/16_zernikes_16.npy
 zernike_maps/16_zernikes_64.npy
 zernike_maps/50_KL_256.npy
+linearity_figures/control_matrix_pinhole_0.685_pixels_64_oversampling_93.png
+linearity_figures/iterative_pytorch_diff_pinhole_0.685_pixels_16_oversampling_373.png
+linearity_figures/iterative_pytorch_diff_pinhole_0.685_pixels_64_oversampling_93.png

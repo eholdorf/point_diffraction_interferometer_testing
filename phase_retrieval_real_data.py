@@ -46,7 +46,48 @@ if True:
         rms = calc_rms(phase,cnms)*589
 
         return rms,mag
+    
+    rms, mag = []*len(OL_KL.T),[]*len(OL_KL.T)
+    for i in tqdm.tqdm(range(len(OL_KL.T))):
+        r,m = rms_calcs(OL_KL.T[i])
+        m = m.item()
+        print('Abberation Magnitude: {}, RMS: {}'.format(np.round(m,0),np.round(r,2)))
+        rms.append(r)
+        mag.append(m)
+        fig,ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.scatter(np.arange(len(rms)),rms,c='k',s=10,marker='o')
+        ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
+        ax1.set_xlabel('Time Iteration')
+        ax1.set_ylabel('RMS (nm)')
+        ax2.set_ylabel('Magnitude of Aberrations (nm)')
+        plt.title('Pinhole Size = {}'.format(pinhole_size))
+        # ask matplotlib for the plotted objects and their labels
+        ax2.plot([],[],'.k',label='RMS')
+        ax2.plot([],[],'.r',label='Turbulence Magnitude')
+        ax2.legend()
+        plt.savefig('figures/rms_mag_{}_iterative.png'.format(pinhole_size))
+        plt.close()
+    
+        np.save('turbulence_data/rms_mag_{}_iterative'.format(pinhole_size),rms)
 
+    # plot the rms and magnitude
+    fig,ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.scatter(np.arange(len(rms)),rms,c='k',s=5)
+    ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
+    ax1.set_xlabel('Time Iteration')
+    ax1.set_ylabel('RMS (nm)')
+    ax2.set_ylabel('Magnitude of Aberrations (nm)')
+    plt.title('Pinhole Size = {}'.format(pinhole_size))
+    # ask matplotlib for the plotted objects and their labels
+    ax2.plot([],[],'.k',label='RMS')
+    ax2.plot([],[],'.r',label='Turbulence Magnitude')
+    ax2.legend()
+    plt.savefig('figures/rms_mag_{}_iterative.png'.format(pinhole_size))
+    plt.close()
+
+if False:
     def rms_calc_pytorch(error):
         # change the data type to torch and divide by 589
         error /= 589
@@ -121,66 +162,67 @@ if True:
     plt.savefig('figures/rms_mag_{}_iterative_pytorch_more.png'.format(pinhole_size))
     plt.close()
 
-# generate the control matrix
-IM_inv = cm.generate_matrix(max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,pinhole_size=pinhole_size,wavelength=0.589,ratio=frac,amp=1e-4,mode=method)
-
 if False:
-    def image_turb(t):
-        cnms = OL_KL[:,t]/589
+    # generate the control matrix
+    IM_inv = cm.generate_matrix(max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,pinhole_size=pinhole_size,wavelength=0.589,ratio=frac,amp=1e-4,mode=method)
+
+    if False:
+        def image_turb(t):
+            cnms = OL_KL[:,t]/589
+            # run the forward model
+            intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
+
+            inten = plt.imshow(intensity,cmap='inferno')
+            return inten
+
+        # make the animation
+        fig = plt.figure()
+        imgs = []
+        for t in range(np.shape(OL_KL)[1]):
+            img = image_turb(t)
+            imgs.append([img])
+
+        ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True)
+        plt.show()
+
+    # generate the interferogram for each time step
+    intensity_no_aberrations = prop.propagate(np.zeros(np.shape(OL_KL)[0]),frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
+
+    def rms_calcs(error):
+        cnms = error/589
+        # calculate the magnitude of the aberrations
+        mag = np.sqrt(np.nansum(cnms**2))*589
         # run the forward model
-        intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589)
+        intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
 
-        inten = plt.imshow(intensity,cmap='inferno')
-        return inten
+        # now find the phase
+        phase = np.dot(IM_inv,intensity.ravel()-intensity_no_aberrations.ravel())
 
-    # make the animation
-    fig = plt.figure()
-    imgs = []
-    for t in range(np.shape(OL_KL)[1]):
-        img = image_turb(t)
-        imgs.append([img])
+        # calculate the rms
+        phase[0] = 0
+        
+        rms = calc_rms(phase,cnms)*589
 
-    ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True)
-    plt.show()
+        return rms,mag
 
-# generate the interferogram for each time step
-intensity_no_aberrations = prop.propagate(np.zeros(np.shape(OL_KL)[0]),frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
-
-def rms_calcs(error):
-    cnms = error/589
-    # calculate the magnitude of the aberrations
-    mag = np.sqrt(np.nansum(cnms**2))*589
-    # run the forward model
-    intensity = prop.propagate(cnms,frac,pinhole_size,max_zerns=np.shape(OL_KL)[0],pup_width=pup_width,fp_oversamp=fp_oversamp,wavelength=0.589,mode_type=method)
-
-    # now find the phase
-    phase = np.dot(IM_inv,intensity.ravel()-intensity_no_aberrations.ravel())
-
-    # calculate the rms
-    phase[0] = 0
-    
-    rms = calc_rms(phase,cnms)*589
-
-    return rms,mag
-
-with Pool(10) as p:
-    vals = p.map(rms_calcs,OL_KL.T)
-rms, mag = zip(*vals)
-np.save('turbulence_data/rms_mag_{}_control_matrix'.format(pinhole_size),rms)
-# plot the rms and magnitude
-fig,ax1 = plt.subplots()
-ax2 = ax1.twinx()
-ax1.scatter(np.arange(len(rms)),rms,c='k',s=1)
-ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
-ax1.set_xlabel('Time Iteration')
-ax1.set_ylabel('RMS (nm)')
-ax2.set_ylabel('Magnitude of Aberrations (nm)')
-plt.title('Pinhole Size = {}'.format(pinhole_size))
-# ask matplotlib for the plotted objects and their labels
-ax2.plot([],[],'.k',label='RMS')
-ax2.plot([],[],'.r',label='Turbulence Magnitude')
-ax2.legend()
-plt.savefig('figures/rms_mag_{}.png'.format(pinhole_size))
-plt.close()
+    with Pool(10) as p:
+        vals = p.map(rms_calcs,OL_KL.T)
+    rms, mag = zip(*vals)
+    np.save('turbulence_data/rms_mag_{}_control_matrix'.format(pinhole_size),rms)
+    # plot the rms and magnitude
+    fig,ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.scatter(np.arange(len(rms)),rms,c='k',s=1)
+    ax2.scatter(np.arange(len(rms)),mag,c='r',s=1)
+    ax1.set_xlabel('Time Iteration')
+    ax1.set_ylabel('RMS (nm)')
+    ax2.set_ylabel('Magnitude of Aberrations (nm)')
+    plt.title('Pinhole Size = {}'.format(pinhole_size))
+    # ask matplotlib for the plotted objects and their labels
+    ax2.plot([],[],'.k',label='RMS')
+    ax2.plot([],[],'.r',label='Turbulence Magnitude')
+    ax2.legend()
+    plt.savefig('figures/rms_mag_{}.png'.format(pinhole_size))
+    plt.close()
 
 
