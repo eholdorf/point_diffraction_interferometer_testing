@@ -59,7 +59,7 @@ def propagate(amp,frac,pinhole_size,max_zerns = 16, wavelength=0.589,pup_width=2
     camera = camera[mid_int - int(pup_width/2):mid_int + int(pup_width/2),
                  mid_int - int(pup_width/2):mid_int + int(pup_width/2)]
 
-    return abs(camera)**2/np.max(abs(camera)**2)
+    return abs(camera)**2 #/np.max(abs(camera)**2)
 
 # test the function
 if __name__=="__main__":

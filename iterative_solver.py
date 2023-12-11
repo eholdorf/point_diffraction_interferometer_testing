@@ -41,6 +41,7 @@ def rms_calculation(z):
     return rmss
 
 def iterative_solver(measured_intensity,frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type):
+    #measured_intensity/=np.max(measured_intensity)
    
     def g(amp):
         interferogram = prop.propagate(amp, frac, pinhole_size, max_zerns,wavelength,pup_width,fp_oversamp,mode_type)

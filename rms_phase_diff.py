@@ -14,6 +14,9 @@ import iterative_solver as im
 import tqdm
 import general_formulas as gf
 import os
+import torch
+import iterative_pytorch as it_pytorch
+import forward_model_pytorch as prop_torch
 
 def RMSE_all_modes(pup_width, fp_oversamp,pinhole_size):
     """
@@ -319,6 +322,87 @@ def response_curve_iterative(pup_width, fp_oversamp,pinhole_size,show = False):
         plt.tight_layout()
         plt.savefig('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
         plt.close()
+
+def response_curve_iterative_pytorch(pup_width, fp_oversamp,pinhole_size,show = False):
+    """
+    Calculate and plot the response curve for a given configuration.
+
+    Parameters:
+    - pup_width (float): Width of the pupil.
+    - fp_oversamp (int): Oversampling factor for the focal plane.
+
+    Returns:
+    None
+
+    This function generates a matrix, iterates over different Zernike modes, calculates
+    the RMSE for each mode, and plots the results.
+
+    Note: This code assumes the existence of the following external functions and modules:
+    - cm.generate_matrix(pup_width, fp_oversamp)
+    - prop.propagate(cnms, frac, pinhole_size, max_zerns, pup_width, fp_oversamp, wavelength, mode_type)
+    - aotools.zernikeArray(max_zerns, pup_width, norm)
+    - aotools.make_kl(max_zerns, pup_width, ri)
+    - aotools.circle(radius, size)
+
+    """
+    
+    frac = 0.5
+    # set phase amplitudes to test
+    amps = np.linspace(-0.1,0.1,11)
+    # generate the interferogram with no aberrations
+    cnms = np.zeros(16,dtype=np.float64)
+    #iterate over modes and plot in subplot grid
+    fig,axs = plt.subplots(4,4,figsize=(6,6))
+    # generate a line for each of the axes
+    for modes in tqdm.tqdm(range(16)):
+        Cs = np.zeros(len(amps),dtype=np.float64)
+        cnmss = np.zeros(len(amps),dtype=np.float64)
+        for j,amp in enumerate(amps):
+            cnms = np.zeros(16,dtype=np.float64)
+            cnms[modes] = amp
+            cnms = torch.from_numpy(cnms)
+            intensity = intensity = prop_torch.forward_prop(max_zerns=16,
+                                            cnms=cnms,
+                                            pup_width=pup_width,
+                                            fp_oversamp=fp_oversamp,
+                                            wavelength=0.589,
+                                            pinhole_size=pinhole_size)
+
+            # now find the phase
+            phase = it_pytorch.iterative_solver(intensity,frac,pinhole_size,
+                                                max_zerns=16,
+                                                pup_width=pup_width,
+                                                fp_oversamp=fp_oversamp,
+                                                wavelength=0.589,
+                                                mode_type='Zernike')
+            # if the phase is a tensor make it a numpy array
+            if type(phase) == torch.Tensor:
+                phase = phase.detach().numpy()
+            if type(cnms) == torch.Tensor:
+                cnms = cnms.detach().numpy()
+            
+            Cs[j] = phase[modes]
+            cnmss[j] = cnms[modes]
+            # plot the result
+            
+            axs.flatten()[modes].plot([cnms[modes]], [phase[modes]], 'ko')
+            # add axis titles
+            axs.flatten()[modes].set_title('Zernike Mode {}'.format(modes+1),size = 8)
+            # set axis titles for the first column and row
+            if modes%4==0:
+                axs.flatten()[modes].set_ylabel('Retrieved')
+            if modes>11:
+                axs.flatten()[modes].set_xlabel('True')
+            plt.tight_layout()
+            plt.savefig('linearity_figures/iterative_pytorch_diff_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
+            
+    if show:
+        plt.show()
+    else:
+        # save the figure
+        plt.tight_layout()
+        plt.savefig('linearity_figures/iterative_pytorch_diff_pinhole_{}_pixels_{}_oversampling_{}.png'.format(pinhole_size,pup_width,fp_oversamp),dpi=300)
+        plt.close()
 # test the functions for a range of pup_width and fp_oversamp
 if __name__=="__main__":
 
@@ -341,13 +425,13 @@ if __name__=="__main__":
 
     if True:
         p = 0.685
-        for pup_width in [2**i for i in range(9,12)]:
-            for oversamp in [2**i for i in range(1,10)]: 
+        for pup_width in [4**i for i in range(1,6)]:
+            for oversamp in [4**i for i in range(1,5)]: 
                 # check if file already exists
                 if not os.path.isfile('linearity_figures/control_matrix_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
                     response_curve(pup_width,int(oversamp/p),p,show = False)
-                #if not os.path.isfile('linearity_figures/iterative_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
-                #    response_curve_iterative(pup_width,int(oversamp/p),p,show = False)
+                if not os.path.isfile('linearity_figures/iterative_pytorch_diff_pinhole_{}_pixels_{}_oversampling_{}.png'.format(p,pup_width,int(oversamp/p))):
+                    response_curve_iterative_pytorch(pup_width,int(oversamp/p),p,show = False)
 
     
     if False:
